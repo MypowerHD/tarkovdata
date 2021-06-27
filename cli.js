@@ -77,6 +77,61 @@ vorpal
 		callback();
 	});
 
+vorpal
+	.command('migrateOldItemFormatToNewFormat', 'Attemp to move the ItemDataFormat')
+	.action(function (args, callback) {
+		migrateItemDataFromOldFormatToNewFormat()
+		callback();
+	});
+
+function migrateItemDataFromOldFormatToNewFormat(args){
+	var fs = require('fs');
+	var itemData = require('./items.en.json');
+	var itemDictionary = Object.values(itemData).reduce((a, x) => ({ ...a, [x.name]: x }), {});
+	var itemList = [];
+		
+	for(const [key, value] of Object.entries(itemDictionary)){
+		if(value.id != null){
+			var newFormat = {};
+			var newName = value.name;
+			var shortName = value.shortName;
+			//Trim because some Names was with an space on the End
+			if(value.name.slice(-1) === " ")
+				newName = value.name.trimEnd()
+			if(value.shortName.slice(-1) === " ")
+				shortName = value.shortName.trimEnd();
+				
+			
+			newFormat.Id = value.id;
+			newFormat.Name = newName;
+			newFormat.ShortName = shortName;
+			//Debug
+			//console.log(newFormat);
+			itemList.push(newFormat);
+			
+		}			
+	}
+	//Debug 
+	// console.log('items in list:' + itemList.length)
+	var jsonString = JSON.stringify(itemList, null, 4);
+	if(fs.existsSync('./itemsNew.en.json'))
+		fs.unlinkSync('./itemsNew.en.json');
+	fs.writeFileSync('./itemsNew.en.json', jsonString);
+	
+	console.log("testing");
+	console.log(getItemLocalizedByItemId('5bc9b9ecd4351e3bac122519'));
+}
+
+function getItemLocalizedByItemId(itemId, locale = 'en'){
+	var fs = require('fs');
+	var itemData = require('./itemsNew.'+locale+'.json');
+	var item = itemData.find(e => e.Id === itemId)
+	if(item != null){
+		return item;
+	}
+	return null;
+}
+
 function migrateHideoutItems(args) {
 	var fs = require('fs')
 	var hideoutData = require('./hideout.json')
