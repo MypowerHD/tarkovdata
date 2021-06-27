@@ -84,6 +84,14 @@ vorpal
 		callback();
 	});
 
+vorpal
+	.command('testingNewItemLocalized', 'Testing new ItemData Localization, outputs the Beard Oil Item.')
+	.action(function (args, callback) {
+		console.log("testing");
+		console.log(getItemLocalizedByItemId('5bc9b9ecd4351e3bac122519'));
+		callback();
+	})
+
 function migrateItemDataFromOldFormatToNewFormat(args){
 	var fs = require('fs');
 	var itemData = require('./items.en.json');
@@ -114,21 +122,36 @@ function migrateItemDataFromOldFormatToNewFormat(args){
 	//Debug 
 	// console.log('items in list:' + itemList.length)
 	var jsonString = JSON.stringify(itemList, null, 4);
-	if(fs.existsSync('./itemsNew.en.json'))
-		fs.unlinkSync('./itemsNew.en.json');
-	fs.writeFileSync('./itemsNew.en.json', jsonString);
 	
-	console.log("testing");
-	console.log(getItemLocalizedByItemId('5bc9b9ecd4351e3bac122519'));
+	//Check if File exist then delete for updating data
+	if(fs.existsSync('./itemsNew.en.json'))
+		try {
+			fs.unlinkSync('./itemsNew.en.json');	
+		}catch(e){
+			console.error(e);
+		}
+		
+	fs.writeFileSync('./itemsNew.en.json', jsonString);
 }
 
 function getItemLocalizedByItemId(itemId, locale = 'en'){
 	var fs = require('fs');
-	var itemData = require('./itemsNew.'+locale+'.json');
+	if(!fs.existsSync('./itemsNew.en.json'))
+		migrateItemDataFromOldFormatToNewFormat();
+	
+	try {
+		var itemData = require('./itemsNew.'+locale+'.json');
+	}catch (ex) {
+		console.error('there is an Error while require ItemData json File.')
+		console.error(ex);
+		return null;
+	}
+	
 	var item = itemData.find(e => e.Id === itemId)
 	if(item != null){
 		return item;
 	}
+	
 	return null;
 }
 
